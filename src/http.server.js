@@ -10,8 +10,8 @@ function getBearerToken(req) {
     return match ? match[1] : null;
 }
 
-// item 001 (.todo/001-jwt-http-endpoint.md) — routing/stub only. Real
-// Graph validation is item 002, real rotation + secret-return is item 003.
+// Routing only — secret rotation and returning it in the response are not
+// yet implemented, so a validated request still gets a 501 for now.
 const httpServer = http.createServer(async (req, res) => {
     if (req.method !== 'POST' || !req.url.startsWith('/jwt-login')) {
         res.writeHead(404, { 'Content-Type': 'application/json' });
@@ -35,7 +35,7 @@ const httpServer = http.createServer(async (req, res) => {
         helper.log('http.server.js', 'jwt-login', username, 'check', check);
 
         res.writeHead(501, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'not implemented — see .todo/002 and .todo/003' }));
+        res.end(JSON.stringify({ error: 'secret rotation not implemented' }));
     } catch (error) {
         helper.error('http.server.js', 'jwt-login', error);
         res.writeHead(500, { 'Content-Type': 'application/json' });

@@ -74,7 +74,7 @@ const allConfigs = {
     LDAPS_CERTIFICATE: { format: "String", required: false, default: null },
     LDAPS_KEY: { format: "String", required: false, default: null },
 
-    // JWT HTTP endpoint (feature-flagged, off by default; see .todo/001)
+    // JWT HTTP endpoint (feature-flagged, off by default)
     JWT_HTTP_ENABLED: { format: "Boolean", required: false, default: false },
     JWT_HTTP_PORT: { format: "Integer", required: false, default: 8080, validate: "PORT" },
 

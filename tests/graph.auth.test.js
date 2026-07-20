@@ -9,6 +9,8 @@ process.env["GRAPH_FILTER_GROUPS"] = "x=y";
 const originalEnv = process.env;
 const msal = require('@azure/msal-node');
 jest.mock('@azure/msal-node');
+let axios = require('axios');
+jest.mock('axios');
 
 msal.LogLevel = {
     Error: 0,
@@ -285,6 +287,62 @@ ${'Test3'} | ${'./tests/'} | ${1} | ${'SOME-Info'}
         expect(acquireTokenByUsernamePassword).toHaveBeenCalledWith(usernamePasswordRequest);
         expect(msal.ConfidentialClientApplication).toHaveBeenCalledWith(graph_auth.msalConfig);
 
+    });
+
+});
+
+describe('graph.auth validateJwtBind', () => {
+
+    beforeAll(() => {
+        process.env = originalEnv;
+        dotenv.config({ path: './tests/Test2.env', override: true });
+        graph_auth = require('../src/graph.auth');
+        axios = require('axios');
+    });
+
+    beforeEach(() => {
+        jest.spyOn(console, 'log').mockImplementation(() => { });
+        jest.spyOn(console, 'warn').mockImplementation(() => { });
+        jest.spyOn(console, 'error').mockImplementation(() => { });
+        axios.get.mockReset();
+    });
+
+    afterEach(() => {
+        console.log.mockRestore();
+        console.warn.mockRestore();
+        console.error.mockRestore();
+    });
+
+    test('valid JWT for the correct user (matched by userPrincipalName) = 1', async () => {
+        axios.get.mockResolvedValueOnce({ data: { userPrincipalName: 'User@Domain.tld', id: 'abc-123' } });
+
+        const result = await graph_auth.validateJwtBind('user@domain.tld', 'jwt-token');
+        expect(result).toBe(1);
+        expect(axios.get).toHaveBeenCalledWith(
+            'https://graph.microsoft.com/v1.0/me',
+            { headers: { Authorization: 'Bearer jwt-token' } }
+        );
+    });
+
+    test('valid JWT for the correct user (matched by id, no userPrincipalName) = 1', async () => {
+        axios.get.mockResolvedValueOnce({ data: { id: 'user@domain.tld' } });
+
+        const result = await graph_auth.validateJwtBind('User@Domain.tld', 'jwt-token');
+        expect(result).toBe(1);
+    });
+
+    test('valid JWT but for a different user = 0', async () => {
+        axios.get.mockResolvedValueOnce({ data: { userPrincipalName: 'someoneelse@domain.tld', id: 'xyz-999' } });
+
+        const result = await graph_auth.validateJwtBind('user@domain.tld', 'jwt-token');
+        expect(result).toBe(0);
+    });
+
+    test('expired/invalid JWT (Graph rejects with 401) = 0', async () => {
+        axios.get.mockRejectedValueOnce({ message: 'Request failed with status code 401', response: { data: { error: { code: 'InvalidAuthenticationToken' } } } });
+
+        const result = await graph_auth.validateJwtBind('user@domain.tld', 'jwt-token');
+        expect(result).toBe(0);
     });
 
 });

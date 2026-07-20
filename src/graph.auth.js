@@ -6,7 +6,14 @@ const fs = require('node:fs');
 const crypto = require('node:crypto');
 
 const msal = require('@azure/msal-node');
+const axios = require('axios');
 const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || '';
+
+if (proxyUrl !== '') {
+    const HttpsProxyAgent = require('https-proxy-agent').HttpsProxyAgent;
+    axios.defaults.proxy = false;
+    axios.defaults.httpsAgent = new HttpsProxyAgent(proxyUrl);
+}
 
 const TOKEN_ENDPOINT = `${config.AZURE_ENDPOINT}/${config.AZURE_TENANTID}/`;
 
@@ -202,18 +209,41 @@ auth.loginWithUsernamePassword = async function loginWithUsernamePassword(userna
 };
 
 /**
- * PLACEHOLDER — real Microsoft Graph JWT validation is item 002
- * (.todo/002-jwt-graph-validation.md), not implemented here. This stub only
- * lets the item 001 HTTPS entry point (.todo/001) route correctly and be
- * tested; it always reports failure.
+ * Validates a JWT access token by calling Microsoft Graph's `/me` endpoint
+ * with it as a Bearer token. The JWT proves MFA/Conditional Access was
+ * already satisfied when it was issued (via the device's WAM/broker) —
+ * this only confirms the token is genuine, unexpired, and belongs to the
+ * claimed user. No local JWKS/signature verification is performed; that's
+ * delegated to Microsoft.
  * @async
- * @param {string} username
+ * @param {string} username - the AzureADuserPrincipalName being bound as
  * @param {string} jwt
- * @returns {number} - 0=login failed; 1=login successfull; 2=special error, use cache;
+ * @returns {number} - 0=login failed; 1=login successfull;
  */
 auth.validateJwtBind = async function validateJwtBind(username, jwt) {
-    helper.log('graph_azuread.js', "validateJwtBind", "not implemented — see item 002", username);
-    return 0;
+    try {
+        const response = await axios.get(`${config.GRAPH_ENDPOINT}/${config.GRAPH_API_VERSION}/me`, {
+            headers: { Authorization: `Bearer ${jwt}` },
+        });
+
+        const profile = response.data || {};
+        const claimedUsername = (username || '').toString().toLowerCase();
+        const matchesUser = [profile.userPrincipalName, profile.id]
+            .filter(Boolean)
+            .some((value) => value.toString().toLowerCase() === claimedUsername);
+
+        if (matchesUser) {
+            return 1;
+        }
+
+        helper.error('graph_azuread.js', "validateJwtBind", { error: "JWT valid but does not belong to requested user", username: username, profileUpn: profile.userPrincipalName });
+        return 0;
+
+    } catch (fullError) {
+        const graphErrorDetail = fullError?.response?.data?.error ?? null;
+        helper.error('graph_azuread.js', "validateJwtBind", { error: "graph /me request failed", username: username, details: fullError.message, graphErrorDetail: graphErrorDetail });
+        return 0;
+    }
 };
 
 // exports
