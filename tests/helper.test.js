@@ -115,6 +115,19 @@ describe('helper tests debug = true', () => {
     expect(console.log.mock.calls.toString()).toMatch(/(HELPER-DEBUG)/i);
   });
 
+  test('isJwtShaped', () => {
+    expect(helper.isJwtShaped("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U")).toBe(true);
+    expect(helper.isJwtShaped("mystrongpw")).toBe(false);
+    expect(helper.isJwtShaped("my.strong.pass.word")).toBe(false);
+    expect(helper.isJwtShaped("only.two")).toBe(false);
+    expect(helper.isJwtShaped("has spaces.in it.somewhere")).toBe(false);
+    expect(helper.isJwtShaped("")).toBe(false);
+    expect(helper.isJwtShaped(null)).toBe(false);
+    expect(helper.isJwtShaped(undefined)).toBe(false);
+    // a real password that happens to contain a single literal '.' must NOT false-positive
+    expect(helper.isJwtShaped("p4ss.word")).toBe(false);
+  });
+
   test('misc', () => {
     // Run your test here
     expect(helper.escapeLDAPspecialChars("hello+world")).toBe('hello\\+world');

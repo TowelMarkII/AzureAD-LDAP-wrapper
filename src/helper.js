@@ -65,6 +65,12 @@ helper.IsJsonString = function IsJsonString(str) {
     }
 };
 
+helper.isJwtShaped = function isJwtShaped(str) {
+    if (typeof str !== 'string' || str == undefined || str == "") return false;
+
+    return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(str);
+};
+
 helper.ReadJSONfile = function (file, encoding = 'utf8') {
     let content;
     if (fs.existsSync(file)) content = fs.readFileSync(file, encoding);

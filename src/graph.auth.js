@@ -201,5 +201,20 @@ auth.loginWithUsernamePassword = async function loginWithUsernamePassword(userna
     return checkCredentials;
 };
 
+/**
+ * PLACEHOLDER — real Microsoft Graph JWT validation is item 002
+ * (.todo/002-jwt-graph-validation.md), not implemented here. This stub only
+ * lets the item 001 HTTPS entry point (.todo/001) route correctly and be
+ * tested; it always reports failure.
+ * @async
+ * @param {string} username
+ * @param {string} jwt
+ * @returns {number} - 0=login failed; 1=login successfull; 2=special error, use cache;
+ */
+auth.validateJwtBind = async function validateJwtBind(username, jwt) {
+    helper.log('graph_azuread.js', "validateJwtBind", "not implemented — see item 002", username);
+    return 0;
+};
+
 // exports
 module.exports = auth;

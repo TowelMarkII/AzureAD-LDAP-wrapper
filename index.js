@@ -16,6 +16,13 @@ if (config.VARS_VALIDATED) {
                 console.log("server.js", ' ---->', 'LDAP server up', '@', server.url);
                 server.init(() => { });
             });
+
+            if (config.JWT_HTTP_ENABLED) {
+                const httpServer = require('./src/http.server');
+                httpServer.listen(config.JWT_HTTP_PORT, "0.0.0.0", function () {
+                    console.log("http.server.js", ' ---->', 'JWT HTTP endpoint up', '@', config.JWT_HTTP_PORT);
+                });
+            }
         }
     })();
 } else {

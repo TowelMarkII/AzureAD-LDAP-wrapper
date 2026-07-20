@@ -74,6 +74,10 @@ const allConfigs = {
     LDAPS_CERTIFICATE: { format: "String", required: false, default: null },
     LDAPS_KEY: { format: "String", required: false, default: null },
 
+    // JWT HTTP endpoint (feature-flagged, off by default; see .todo/001)
+    JWT_HTTP_ENABLED: { format: "Boolean", required: false, default: false },
+    JWT_HTTP_PORT: { format: "Integer", required: false, default: 8080, validate: "PORT" },
+
     // SAMBA
     LDAP_SAMBADOMAINNAME: { format: "String", required: true, default: () => config.LDAP_BASEDN.split(",")[0].replace("dc=", "") },
     LDAP_SAMBASIDBASE: { format: "String", required: true, default: "S-1-5-21-2475342291-1480345137-508597502", transform: nonWhiteSpaceUpperCase },

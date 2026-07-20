@@ -94,6 +94,12 @@ describe('config tests', () => {
             expect(config.DSM7).toBe(true);
             expect(config.LDAP_DEBUG).toBe(exDebug);
         });
+
+        test('JWT HTTP endpoint configs default to disabled', () => {
+            // feature flag must default to off — unmodified/backward-compatible behavior
+            expect(config.JWT_HTTP_ENABLED).toBe(false);
+            expect(config.JWT_HTTP_PORT).toBe(8080);
+        });
         test('LDAP configs', () => {
             // Run your test here
             expect(config.LDAP_PORT).toBe(exPort);
