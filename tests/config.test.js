@@ -99,6 +99,7 @@ describe('config tests', () => {
             // feature flag must default to off — unmodified/backward-compatible behavior
             expect(config.JWT_HTTP_ENABLED).toBe(false);
             expect(config.JWT_HTTP_PORT).toBe(8080);
+            expect(config.JWT_ROTATION_RACE_WINDOW_SECONDS).toBe(5);
         });
         test('LDAP configs', () => {
             // Run your test here

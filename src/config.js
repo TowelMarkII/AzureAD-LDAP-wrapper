@@ -77,6 +77,7 @@ const allConfigs = {
     // JWT HTTP endpoint (feature-flagged, off by default)
     JWT_HTTP_ENABLED: { format: "Boolean", required: false, default: false },
     JWT_HTTP_PORT: { format: "Integer", required: false, default: 8080, validate: "PORT" },
+    JWT_ROTATION_RACE_WINDOW_SECONDS: { format: "Integer", required: false, default: 5 },
 
     // SAMBA
     LDAP_SAMBADOMAINNAME: { format: "String", required: true, default: () => config.LDAP_BASEDN.split(",")[0].replace("dc=", "") },
