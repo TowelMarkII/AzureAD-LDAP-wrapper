@@ -34,6 +34,13 @@ const httpServer = http.createServer(async (req, res) => {
         const check = await auth.validateJwtBind(username, jwt);
         helper.log('http.server.js', 'jwt-login', username, 'check', check);
 
+        if (check !== 1) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'invalid credentials' }));
+            return;
+        }
+
+        // validated, but secret rotation is not implemented yet
         res.writeHead(501, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'secret rotation not implemented' }));
     } catch (error) {

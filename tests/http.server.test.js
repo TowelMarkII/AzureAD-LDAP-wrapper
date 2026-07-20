@@ -47,14 +47,27 @@ describe('http.server jwt-login endpoint', () => {
         auth.validateJwtBind.mockClear();
     });
 
-    test('JWT-shaped credential routes to validateJwtBind and responds 501', async () => {
+    test('JWT-shaped credential routes to validateJwtBind, rejected -> 401', async () => {
+        auth.validateJwtBind.mockResolvedValueOnce(0);
+
+        const res = await request('/jwt-login?username=alice', {
+            headers: { authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U' },
+        });
+
+        expect(res.statusCode).toBe(401);
+        expect(auth.validateJwtBind).toHaveBeenCalledTimes(1);
+        expect(auth.validateJwtBind).toHaveBeenCalledWith('alice', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U');
+    });
+
+    test('JWT-shaped credential routes to validateJwtBind, validated -> 501 (rotation not implemented)', async () => {
+        auth.validateJwtBind.mockResolvedValueOnce(1);
+
         const res = await request('/jwt-login?username=alice', {
             headers: { authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U' },
         });
 
         expect(res.statusCode).toBe(501);
         expect(auth.validateJwtBind).toHaveBeenCalledTimes(1);
-        expect(auth.validateJwtBind).toHaveBeenCalledWith('alice', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U');
     });
 
     test('non-JWT-shaped credential responds 400 and does not call validateJwtBind', async () => {
