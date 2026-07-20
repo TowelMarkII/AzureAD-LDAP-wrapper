@@ -108,22 +108,25 @@ describe('http.server jwt-login endpoint', () => {
         const body = JSON.parse(res.body);
         expect(typeof body.secret).toBe('string');
         expect(body.secret.length).toBeGreaterThan(0);
+        expect(body.warning).toBeUndefined();
 
         const entry = mockDb['uid=alice,cn=users,dc=domain,dc=tld'];
         expect(entry.sambaNTPassword).not.toBe('OLDHASH0000000000000000000000000');
         expect(entry.sambaPwdLastSet).toBeGreaterThan(0);
     });
 
-    test('two rapid rotations for the same user log a POSSIBLE RACE warning', async () => {
+    test('two rapid rotations for the same user log and return a POSSIBLE RACE warning', async () => {
         auth.validateJwtBind.mockResolvedValue(1);
 
-        await request('/jwt-login?username=alice%40domain.tld', {
+        const first = await request('/jwt-login?username=alice%40domain.tld', {
             headers: { authorization: `Bearer ${validJwt}` },
         });
-        await request('/jwt-login?username=alice%40domain.tld', {
+        const second = await request('/jwt-login?username=alice%40domain.tld', {
             headers: { authorization: `Bearer ${validJwt}` },
         });
 
+        expect(JSON.parse(first.body).warning).toBeUndefined();
+        expect(JSON.parse(second.body).warning).toMatch(/POSSIBLE RACE/);
         expect(console.warn.mock.calls.some((call) => call.join(' ').includes('POSSIBLE RACE'))).toBe(true);
     });
 

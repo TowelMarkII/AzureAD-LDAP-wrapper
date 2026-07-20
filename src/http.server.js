@@ -26,6 +26,9 @@ function findUserEntryDN(db, username) {
 // (same hashing server.js uses for a normal bind), and logs the rotation —
 // unconditionally, plus a distinctly-flagged warning if it happened within
 // JWT_ROTATION_RACE_WINDOW_SECONDS of the previous rotation for this user.
+// Returns { secret, warning } — warning is null unless a race was detected,
+// in which case it's also handed back to the caller so the client isn't
+// relying solely on server-side logs to notice it.
 function rotateSecret(dn, username) {
     const db = database.getEntries();
     const userAttributes = db[dn];
@@ -45,11 +48,13 @@ function rotateSecret(dn, username) {
 
     helper.forceLog('http.server.js', 'rotateSecret', username, 'rotated', { deltaSeconds: deltaSeconds });
 
+    let warning = null;
     if (deltaSeconds !== null && deltaSeconds < config.JWT_ROTATION_RACE_WINDOW_SECONDS) {
-        helper.warn('http.server.js', 'rotateSecret', `POSSIBLE RACE: rapid re-rotation for user ${username}, ${deltaSeconds}s since last`);
+        warning = `POSSIBLE RACE: rapid re-rotation for user ${username}, ${deltaSeconds}s since last`;
+        helper.warn('http.server.js', 'rotateSecret', warning);
     }
 
-    return secret;
+    return { secret, warning };
 }
 
 const httpServer = http.createServer(async (req, res) => {
@@ -89,10 +94,10 @@ const httpServer = http.createServer(async (req, res) => {
             return;
         }
 
-        const secret = rotateSecret(dn, username);
+        const { secret, warning } = rotateSecret(dn, username);
 
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ secret: secret }));
+        res.end(JSON.stringify(warning ? { secret, warning } : { secret }));
     } catch (error) {
         helper.error('http.server.js', 'jwt-login', error);
         res.writeHead(500, { 'Content-Type': 'application/json' });
